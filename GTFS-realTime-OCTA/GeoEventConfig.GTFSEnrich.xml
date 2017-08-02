@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<template productVersion="10.5.1">
+    <geoEventServices>
+        <geoEventService name="5d07c292-0682-447f-859b-7388362e9ec6" label="GTFS-vehicle-service-enrich" description="" lineStyle="Diagonal" runningState="STOPPED" statusDetails="">
+            <inputs>
+                <input ref="d3e521ca-9fc7-438b-812b-e1d1e4b87f28" label="gtfsrealtime-in-OCTA-Vehicle" left="90" top="190" width="200" height="40"/>
+                <input ref="cc6f4b0a-d224-4cc5-806a-49f1698afe3e" label="gtfsrealtime-in-OCTA-tripUpdate" left="90" top="90" width="200" height="50"/>
+            </inputs>
+            <outputs>
+                <output ref="f69c0d57-1a0f-4f77-88c4-ada6a5130779" label="bds-out-GTFS-enriched" left="710" top="190" width="144" height="40"/>
+                <output ref="ccb14c0c-cecd-484a-896b-9cc6994cf85e" label="tripUpdate-fs-out" left="650" top="95" width="105" height="40"/>
+            </outputs>
+            <nodes>
+                <node name="dce18cac-e279-49ac-8fd7-a3815deb16fb" label="enrich filter" left="530" top="182" width="104" height="62">
+                    <filter>
+                        <logicalCondition operator="AND">
+                            <attributeCondition operand="$DEFINITION_NAME" operator="=" value="VehiclewithTripUpdate"/>
+                        </logicalCondition>
+                    </filter>
+                </node>
+                <node name="eb3d9cba-4d16-471f-8828-ee5190b4060d" label="Enrich trip update" left="370" top="183" width="109" height="53">
+                    <processor uri="com.esri.ges.processor/FieldEnricher-FeatureService/10.5.1">
+                        <properties>
+                            <property name="eventDefinitionName" type="String">VehiclewithTripUpdate</property>
+                            <property name="dataJoinFieldName" type="ArcGISField">vehicleid</property>
+                            <property name="resultDestination" type="String">New Fields</property>
+                            <property name="eventJoinFieldName" type="String">TRACK_ID</property>
+                            <property name="cacheRefreshTimeInterval" type="Integer">1</property>
+                            <property name="layer" type="ArcGISLayer">0</property>
+                            <property name="tags" type="String"></property>
+                            <property name="folder" type="ArcGISFolder">/</property>
+                            <property name="maxCacheSize" type="Integer">1000</property>
+                            <property name="service" type="ArcGISFeatureService">GTFSTripUpdate</property>
+                            <property name="serverType" type="ArcGISServiceType">FeatureServer</property>
+                            <property name="dataStoreName" type="ArcGISConnection">default</property>
+                            <property name="fields" type="ArcGISLayerFieldNames">delay,licenseplate,stoptimeupdatecount</property>
+                        </properties>
+                    </processor>
+                </node>
+                <node name="5498d190-b0ba-482f-82b4-cc51dd946100" label="FieldMapper" left="470" top="95" width="74" height="40">
+                    <processor uri="com.esri.ges.processor/FieldMapper/10.5.1">
+                        <properties>
+                            <property name="inputFields" type="String">entityid,delay,tripid,directionid,routeid,startdate,starttime,schedulerel,vehicleid,label,licenseplate,headertimestamp,timestamp,stoptimeupdatecount</property>
+                            <property name="outputFields" type="String">entityid,delay,tripid,directionid,routeid,startdate,starttime,schedulerel,vehicleid,label,licenseplate,headertimestamp,timestamp,stoptimeupdatecount</property>
+                            <property name="inputGeoEventDefinition" type="GeoEventDefinition">GtfsRtTripUpdate</property>
+                            <property name="outputGeoEventDefinition" type="GeoEventDefinition">GtfsRtTripUpdate-Flat</property>
+                        </properties>
+                    </processor>
+                </node>
+            </nodes>
+            <flow>
+                <from ref="dce18cac-e279-49ac-8fd7-a3815deb16fb" label="enrich filter">
+                    <to ref="f69c0d57-1a0f-4f77-88c4-ada6a5130779" label="bds-out-GTFS-enriched"/>
+                </from>
+                <from ref="eb3d9cba-4d16-471f-8828-ee5190b4060d" label="Enrich trip update">
+                    <to ref="dce18cac-e279-49ac-8fd7-a3815deb16fb" label="enrich filter"/>
+                </from>
+                <from ref="5498d190-b0ba-482f-82b4-cc51dd946100" label="FieldMapper">
+                    <to ref="ccb14c0c-cecd-484a-896b-9cc6994cf85e" label="tripUpdate-fs-out"/>
+                </from>
+                <from ref="d3e521ca-9fc7-438b-812b-e1d1e4b87f28" label="gtfsrealtime-in-OCTA-Vehicle">
+                    <to ref="eb3d9cba-4d16-471f-8828-ee5190b4060d" label="Enrich trip update"/>
+                </from>
+                <from ref="cc6f4b0a-d224-4cc5-806a-49f1698afe3e" label="gtfsrealtime-in-OCTA-tripUpdate">
+                    <to ref="5498d190-b0ba-482f-82b4-cc51dd946100" label="FieldMapper"/>
+                </from>
+            </flow>
+            <geoEventsReceivedRateRange max="0.0" min="0.0"/>
+            <geoEventsSentRateRange max="0.0" min="0.0"/>
+        </geoEventService>
+    </geoEventServices>
+    <inputs>
+        <input clusterCommand="START" connector="esri-in-gtfsrealtime" connectorLabel="Receive GTFS Realtime feed" hostName="SAYARE" label="gtfsrealtime-in-OCTA-Vehicle" name="d3e521ca-9fc7-438b-812b-e1d1e4b87f28" runningState="STARTED" statusDetails="NULL" supportsAllGeoEventDefinitions="true">
+            <adapter uri="com.esri.geoevent.adapter.inbound/GTFSRealtime/10.5.0">
+                <properties>
+                    <property name="headers" type="String"></property>
+                    <property name="url" type="String">http://api.octa.net/GTFSRealTime/protoBuf/VehiclePositions.aspx</property>
+                </properties>
+            </adapter>
+            <geoEventDefinitionHistory>
+                <guid>96030102-93f2-4e57-b0f8-3c630a571e02</guid>
+            </geoEventDefinitionHistory>
+            <geoEventsRateRange max="0.0" min="0.0"/>
+            <supportedGeoEventDefinitions/>
+            <transport uri="com.esri.geoevent.transport.inbound/TimeTriggerTransport/10.5.0">
+                <properties>
+                    <property name="useScheduleTime" type="Boolean">false</property>
+                    <property name="useEndTime" type="Boolean">false</property>
+                    <property name="triggerInterval" type="Integer">10</property>
+                    <property name="repeatInterval" type="Integer">1000</property>
+                    <property name="startTime" type="String">00:00:00</property>
+                    <property name="endTime" type="String">23:59:59</property>
+                    <property name="repeatCount" type="Integer">1</property>
+                    <property name="timeUnit" type="String">seconds</property>
+                </properties>
+            </transport>
+        </input>
+        <input clusterCommand="START" connector="esri-in-gtfsrealtime" connectorLabel="Receive GTFS Realtime feed" hostName="SAYARE" label="gtfsrealtime-in-OCTA-tripUpdate" name="cc6f4b0a-d224-4cc5-806a-49f1698afe3e" runningState="STARTED" statusDetails="NULL" supportsAllGeoEventDefinitions="true">
+            <adapter uri="com.esri.geoevent.adapter.inbound/GTFSRealtime/10.5.0">
+                <properties>
+                    <property name="headers" type="String"></property>
+                    <property name="url" type="String">http://api.octa.net/GTFSRealTime/protoBuf/tripupdates.aspx</property>
+                </properties>
+            </adapter>
+            <geoEventDefinitionHistory>
+                <guid>8111d06f-29b1-4bac-9727-fa060cbc3fe4</guid>
+            </geoEventDefinitionHistory>
+            <geoEventsRateRange max="0.0" min="0.0"/>
+            <supportedGeoEventDefinitions/>
+            <transport uri="com.esri.geoevent.transport.inbound/TimeTriggerTransport/10.5.0">
+                <properties>
+                    <property name="useScheduleTime" type="Boolean">false</property>
+                    <property name="useEndTime" type="Boolean">false</property>
+                    <property name="triggerInterval" type="Integer">10</property>
+                    <property name="repeatInterval" type="Integer">1000</property>
+                    <property name="startTime" type="String">00:00:00</property>
+                    <property name="endTime" type="String">23:59:59</property>
+                    <property name="repeatCount" type="Integer">1</property>
+                    <property name="timeUnit" type="String">seconds</property>
+                </properties>
+            </transport>
+        </input>
+    </inputs>
+    <outputs>
+        <output clusterCommand="START" connector="esri-out-bds-add" connectorLabel="Add a Feature to a Spatiotemporal Big Data Store" label="bds-out-GTFS-enriched" name="f69c0d57-1a0f-4f77-88c4-ada6a5130779" runningState="STARTED" statusDetails="NULL" supportsAllGeoEventDefinitions="true">
+            <adapter uri="com.esri.ges.adapter.outbound/Noop/10.5.1"/>
+            <geoEventDefinitionHistory>
+                <guid>3ded5aee-bc6b-412e-b2e6-b724410688dd</guid>
+            </geoEventDefinitionHistory>
+            <geoEventsRateRange max="0.0" min="0.0"/>
+            <supportedGeoEventDefinitions/>
+            <transport uri="com.esri.ges.transport.outbound/BDS/10.5.1">
+                <properties>
+                    <property name="bdsDataSource" type="ArcGISBDSSource">VehiclewithTripUpdate</property>
+                    <property name="datastore" type="ArcGISBDSConnection">default</property>
+                    <property name="maximumTransactionSize" type="Integer">1000</property>
+                    <property name="geoEventDefinitionName" type="GeoEventDefinition">VehiclewithTripUpdate</property>
+                    <property name="flushInterval" type="Integer">100</property>
+                    <property name="updateField" type="GeoEventDefinitionField">entityid</property>
+                    <property name="append" type="Boolean">true</property>
+                </properties>
+            </transport>
+        </output>
+        <output clusterCommand="START" connector="esri-out-json-fs-update" connectorLabel="Update a Feature" label="tripUpdate-fs-out" name="ccb14c0c-cecd-484a-896b-9cc6994cf85e" runningState="STARTED" statusDetails="NULL" supportsAllGeoEventDefinitions="true">
+            <adapter uri="com.esri.ges.adapter.outbound/JSON/10.5.1">
+                <properties>
+                    <property name="updateInterval" type="String">1</property>
+                    <property name="flattenEvents" type="Boolean">true</property>
+                    <property name="keepEventsUnique" type="Boolean">true</property>
+                    <property name="mimeType" type="String">application/json</property>
+                    <property name="prettyJson" type="Boolean">false</property>
+                </properties>
+            </adapter>
+            <geoEventDefinitionHistory>
+                <guid>798d4856-4c5a-4b2f-9af1-a34e7b648c96</guid>
+            </geoEventDefinitionHistory>
+            <geoEventsRateRange max="0.0" min="0.0"/>
+            <supportedGeoEventDefinitions/>
+            <transport uri="com.esri.ges.transport.outbound/FeatureService/10.5.1">
+                <properties>
+                    <property name="datastore" type="ArcGISConnection">default</property>
+                    <property name="maximumTransactionSize" type="Integer">500</property>
+                    <property name="featureLifeSpan" type="Integer">1440</property>
+                    <property name="serviceName" type="ArcGISFeatureService">GTFSTripUpdate</property>
+                    <property name="layerIndex" type="ArcGISLayer">0</property>
+                    <property name="trackIDField" type="ArcGISField">vehicleid</property>
+                    <property name="updateOnly" type="Boolean">false</property>
+                    <property name="path" type="ArcGISFolder">/</property>
+                    <property name="cleanupTimeField" type="ArcGISDateTimeField">headertimestamp</property>
+                    <property name="cleanupFeatures" type="Boolean">false</property>
+                    <property name="cleanupFrequency" type="Integer">20</property>
+                    <property name="append" type="Boolean">false</property>
+                </properties>
+            </transport>
+        </output>
+    </outputs>
+    <geoEventDefinitions>
+        <geoEventDefinition guid="798d4856-4c5a-4b2f-9af1-a34e7b648c96" name="GtfsRtTripUpdate-Flat" owner="admin" accessType="editable">
+            <fieldDefinitions>
+                <fieldDefinition name="entityid" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="delay" type="Integer" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="tripid" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="directionid" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="routeid" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="startdate" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="starttime" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="schedulerel" type="Integer" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="vehicleid" type="String" cardinality="One">
+                    <fieldDefinitionTag>
+                        <name>TRACK_ID</name>
+                    </fieldDefinitionTag>
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="label" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="licenseplate" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="headertimestamp" type="Date" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="timestamp" type="Date" cardinality="One">
+                    <fieldDefinitionTag>
+                        <name>TIME_START</name>
+                    </fieldDefinitionTag>
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="stoptimeupdatecount" type="Integer" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+            </fieldDefinitions>
+        </geoEventDefinition>
+        <geoEventDefinition guid="8111d06f-29b1-4bac-9727-fa060cbc3fe4" name="GtfsRtTripUpdate" owner="com.esri.geoevent.adapter.inbound/GTFSRealtime/10.5.0" accessType="editable">
+            <fieldDefinitions>
+                <fieldDefinition name="entityid" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="delay" type="Integer" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="tripid" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="directionid" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="routeid" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="startdate" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="starttime" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="schedulerel" type="Integer" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="vehicleid" type="String" cardinality="One">
+                    <fieldDefinitionTag>
+                        <name>TRACK_ID</name>
+                    </fieldDefinitionTag>
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="label" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="licenseplate" type="String" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="headertimestamp" type="Date" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="timestamp" type="Date" cardinality="One">
+                    <fieldDefinitionTag>
+                        <name>TIME_START</name>
+                    </fieldDefinitionTag>
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="stoptimeupdatecount" type="Integer" cardinality="One">
+                    <fieldDefinitions/>
+                </fieldDefinition>
+                <fieldDefinition name="stoptimeupdates" type="Group" cardinality="Many">
+                    <fieldDefinitions>
+                        <fieldDefinition name="arrdelay" type="Integer" cardinality="One">
+                            <fieldDefinitions/>
+                        </fieldDefinition>
+                        <fieldDefinition name="arrtime" type="Long" cardinality="One">
+                            <fieldDefinitions/>
+                        </fieldDefinition>
+                        <fieldDefinition name="arruncertainty" type="Integer" cardinality="One">
+                            <fieldDefinitions/>
+                        </fieldDefinition>
+                        <fieldDefinition name="dptdelay" type="Integer" cardinality="One">
+                            <fieldDefinitions/>
+                        </fieldDefinition>
+                        <fieldDefinition name="dpttime" type="Long" cardinality="One">
+                            <fieldDefinitions/>
+                        </fieldDefinition>
+                        <fieldDefinition name="dptuncertainty" type="Integer" cardinality="One">
+                            <fieldDefinitions/>
+                        </fieldDefinition>
+                        <fieldDefinition name="stopid" type="String" cardinality="One">
+                            <fieldDefinitions/>
+                        </fieldDefinition>
+                        <fieldDefinition name="currentstopseq" type="Integer" cardinality="One">
+                            <fieldDefinitions/>
+                        </fieldDefinition>
+                        <fieldDefinition name="schedulerel" type="Integer" cardinality="One">
+                            <fieldDefinitions/>
+                        </fieldDefinition>
+                    </fieldDefinitions>
+                </fieldDefinition>
+            </fieldDefinitions>
+        </geoEventDefinition>
+    </geoEventDefinitions>
+    <tags/>
+    <connectors>
+        <connector accessType="editable" label="Receive GTFS Realtime Feed" name="esri-in-gtfsrealtime" type="inbound">
+            <adapter uri="com.esri.geoevent.adapter.inbound/GTFSRealtime/10.5.0"/>
+            <defaultName>gtfsrealtime-in</defaultName>
+            <description>Connects to a GTFS realtime feed to receive data.</description>
+            <properties>
+                <advanced/>
+                <hidden/>
+                <shown>
+                    <property default="http://65.213.12.244/realtimefeed/vehicle/vehiclepositions.pb" label="Source URL for the GTFS realtime feed" name="url" source="adapter"/>
+                    <property default="" label="Headers" name="headers" source="adapter"/>
+                    <property default="false" label="Use Scheduled Time" name="useScheduleTime" source="transport"/>
+                    <property default="30000" label="Trigger interval (in Time Unit)" name="triggerInterval" source="transport"/>
+                    <property default="00:00:00" label="Start Time" name="startTime" source="transport"/>
+                    <property default="1000" label="Repeat interval (in Time Unit)" name="repeatInterval" source="transport"/>
+                    <property default="false" label="Use End Time" name="useEndTime" source="transport"/>
+                    <property default="23:59:59" label="Scheduled Time" name="endTime" source="transport"/>
+                    <property default="1" label="Repeat Count" name="repeatCount" source="transport"/>
+                    <property default="milliseconds" label="Time Unit" name="timeUnit" source="transport"/>
+                </shown>
+            </properties>
+            <transport uri="com.esri.geoevent.transport.inbound/TimeTriggerTransport/10.5.0"/>
+        </connector>
+    </connectors>
+</template>
